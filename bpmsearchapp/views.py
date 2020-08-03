@@ -7,7 +7,7 @@ import pprint
 import base64
 import json
 from .forms import SearchForm
-from .modules.spotify import pretty_time_delta, get_song_detail, get_song_recommendations, Track
+from .modules.spotify import pretty_time_delta, Track
 
 
 def index(request):
