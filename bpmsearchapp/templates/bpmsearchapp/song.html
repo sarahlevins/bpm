@@ -10,11 +10,8 @@
 <body>
     <h1>Here is your song</h1>
 
-    <p>You searched for {{song_detail.song_title}} by {{ song_detail.artist }}</p>
-    <p>It's BPM is {{song_detail.tempo}}, and it is {{ song_detail.duration }} long.</p>
-
-    <p>{{ audio_features.duration_ms }}</p>
-    <p>{{ audio_features.tempo }}</p>
+    <p>You searched for {{track.title}} by {{ track.artist }}</p>
+    <p>It's BPM is {{track.tempo}}, and it is {{ track.duration }} long.</p>
 
     <table>
         <tr>
@@ -23,9 +20,9 @@
             <th>Tempo</th>
             <th>Duration</th>
         </tr>
-        {%for i in song_recommendations%}
+        {%for i in track.recommendations%}
         <tr>
-            <td>{{i.song_title}}</td>
+            <td>{{i.title}}</td>
             <td>{{i.artist}}</td>
             <td>{{i.tempo}}</td>
             <td>{{i.duration}}</td>
