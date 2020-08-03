@@ -2,9 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.views.generic import TemplateView
 
-import requests, pprint, base64, json
+import requests
+import pprint
+import base64
+import json
 from .forms import SearchForm
-from .modules.spotify import pretty_time_delta, get_song_detail, get_audio_features, get_song_recommendations
+from .modules.spotify import pretty_time_delta, Track
+
 
 def index(request):
     # if this is a POST request we need to process the form data
@@ -13,21 +17,21 @@ def index(request):
         form = SearchForm(request.POST)
         # check whether it's valid:
         if form.is_valid():
-        # process the data in form.cleaned_data as required
+            # process the data in form.cleaned_data as required
             song_title = form.cleaned_data.get('song_title')
             target_tempo = form.cleaned_data.get('target_tempo')
-            #get details of requested song
-            song_detail = get_song_detail(song_title)
-            song_detail['tempo'] = get_audio_features(song_detail['id'])['tempo']
-            #get song recommendations
-            song_recommendations = get_song_recommendations(song_detail['id'], target_tempo)
-            song_recommendations.insert(0,song_detail)
+            duration = form.cleaned_data.get('duration')
+            # get details of requested song
+            track = Track(song_title)
+            track.get_song_detail()
+            track.get_song_recommendations(target_tempo)
+            track.create_duration_playlist(duration)
             total_duration = 0
-            for d in song_recommendations:
-                total_duration += d['duration_ms']
+            for d in track.duration_playlist:
+                total_duration += d.duration_ms
             total_duration = pretty_time_delta(total_duration/1000)
 
-            return render(request, 'bpmsearchapp/song.html', {'song_recommendations': song_recommendations, 'song_detail': song_detail, 'total_duration':total_duration})
+            return render(request, 'bpmsearchapp/song.html', {'song_recommendations': track.duration_playlist, 'track': track, 'total_duration': total_duration})
 
     # if a GET (or any other method) we'll create a blank form
     else:
