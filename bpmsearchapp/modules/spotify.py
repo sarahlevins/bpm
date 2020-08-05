@@ -4,6 +4,7 @@ import json
 import requests
 import datetime
 import pprint
+import numpy as np
 from datetime import timedelta
 
 
@@ -73,6 +74,9 @@ class Track():
             f"https://api.spotify.com/v1/recommendations?market=AU&limit=90&seed_tracks={self.id}&target_tempo={tempo}", headers=header_list).json()['tracks']
         feat_response = requests.get(
             f"https://api.spotify.com/v1/audio-features/?ids={','.join([track['id'] for track in recc_response])}", headers=header_list).json()['audio_features']
+
+        print([track['id'] for track in recc_response])
+
         for i in enumerate(recc_response):
             i = i[0]
             track = Track(recc_response[i]['name'])
@@ -97,4 +101,14 @@ class Track():
                     self.duration_playlist.append(self.recommendations[i[0]])
                     duration += datetime.timedelta(
                         milliseconds=self.recommendations[i[0]].duration_ms)
+        self.duration_playlist_duration = np.sum(
+            [t.duration_ms for t in self.duration_playlist])
+        return self
+
+    def save_playlist(self):
+        # get access token
+        CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
+        REDIRECT_URI = 'https://www.google.com'
+        url = f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={REDIRECT_URI}&scope=playlist-modify-private'
+        authorization_response = requests.get(url)
         return self
