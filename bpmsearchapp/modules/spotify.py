@@ -75,7 +75,7 @@ class Track():
         feat_response = requests.get(
             f"https://api.spotify.com/v1/audio-features/?ids={','.join([track['id'] for track in recc_response])}", headers=header_list).json()['audio_features']
 
-        print([track['id'] for track in recc_response])
+        self.recommendation_ids = [track['id'] for track in recc_response]
 
         for i in enumerate(recc_response):
             i = i[0]
@@ -105,10 +105,50 @@ class Track():
             [t.duration_ms for t in self.duration_playlist])
         return self
 
-    def save_playlist(self):
-        # get access token
-        CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
-        REDIRECT_URI = 'https://www.google.com'
-        url = f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={REDIRECT_URI}&scope=playlist-modify-private'
-        authorization_response = requests.get(url)
+    def spotify_playlist(self, playlist_name):
+        spotify_user_auth_url = f'https://accounts.spotify.com/authorize?client_id={os.environ.get("SPOTIFY_CLIENT_ID")}&response_type=code&redirect_uri={os.environ.get("REDIRECT_URI")}&scope=playlist-modify-private'
+
+        user_auth_response = requests.get(spotify_user_auth_url).json()
+
+        print(user_auth_response)
+
+        body = {
+            'code': user_auth_response['code'],
+            'client_id': os.environ.get('SPOTIFY_CLIENT_ID'),
+            'client_secret': os.environ.get('SPOTIFY_CLIENT_SECRET'),
+            'grant_type': 'authorization_code',
+            'redirect_uri': os.environ.get("REDIRECT_URI")
+        }
+        auth_response = requests.post(
+            'https://accounts.spotify.com/api/token', data=body)
+
+        user_response = requests.get('https://api.spotify.com/v1/me', headers={
+            "Authorization": f"Bearer {auth_response.json()['access_token']}"})
+
+        user_id = user_response.json()['id']
+        playlist_payload = '{\"name\":\"test playlist2\", \"public\":false}'
+
+        create_playlist_response = requests.post(f'https://api.spotify.com/v1/users/{user_id}/playlists',
+                                                 headers={
+                                                     "Authorization": f"Bearer {auth_response.json()['access_token']}",
+                                                     "Content-Type": "application/json"
+                                                 },
+                                                 data=playlist_payload)
+
+        playlist_id = create_playlist_response.json()['id']
+
+        songs_payload = [
+            f"spotify:track:{track}" for track in self.recommendation_ids]
+        songs_payload = json.dumps({"uris": songs_payload})
+
+        # songs_payload = json.dumps({"uris": ["spotify:track:2qxXypNXOJZ5qUFdpzJ56n",
+        #                                      "spotify:track:6QfnvcOKsdN4Q6exUWVuzn", "spotify:track:72vsd9IEBIonmvIY7TEjXK"]})
+
+        add_items_to_playlist_response = requests.post(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks',
+                                                       headers={
+                                                           "Authorization": f"Bearer {auth_response.json()['access_token']}",
+                                                           "Content-Type": "application/json"
+                                                       },
+                                                       data=songs_payload)
+
         return self

@@ -1,47 +1,42 @@
-from django.shortcuts import render
-from django.http import HttpResponseRedirect
-from django.http import HttpResponse
-
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views.generic import TemplateView
+from django.urls import reverse
+
 
 import requests
 import pprint
 import base64
 import json
 import os
-from .forms import SearchForm
+from .forms import SearchForm, PlaylistForm
 from .modules.spotify import pretty_time_delta, Track
 
 
-# def save_playlist(self):
-#     # get access token
-#     CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
-#     REDIRECT_URI = 'localhost:8000'
-#     url = f'https://accounts.spotify.com/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri={REDIRECT_URI}&scope=playlist-modify-private'
-#     requests.get(url)
-
-
 def index(request):
-    # if this is a POST request we need to process the form data
     spotify_auth_url = f'https://accounts.spotify.com/authorize?client_id={os.environ.get("SPOTIFY_CLIENT_ID")}&response_type=code&redirect_uri={os.environ.get("REDIRECT_URI")}&scope=playlist-modify-private'
     if request.method == 'POST':
-        # create a form instance and populate it with data from the request:
         form = SearchForm(request.POST)
+        playlist_form = PlaylistForm(request.POST)
         if form.is_valid():
             track = Track(form.cleaned_data.get('song_title'))
             track.get_song_detail()
             track.get_song_recommendations(
                 form.cleaned_data.get('target_tempo'))
             track.create_duration_playlist(form.cleaned_data.get('duration'))
-            return render(request, 'bpmsearchapp/song.html', {'spotify_auth_url': spotify_auth_url, 'track': track, 'total_duration': pretty_time_delta(track.duration_playlist_duration/1000)})
-    # if a GET (or any other method) we'll create a blank form
+            return render(request, 'bpmsearchapp/song.html', {'playlist_form': playlist_form, 'track': track, 'spotify_auth_url': spotify_auth_url, 'total_duration': pretty_time_delta(track.duration_playlist_duration/1000)})
+        if playlist_form.is_valid():
+            track = track
+            playlist_name = playlist_form.cleaned_data.get(
+                'playlist_name')
+            track.spotify_playlist(playlist_name)
+            return render(request, 'bpmsearchapp/song.html', {'success': 'success'})
     else:
         form = SearchForm()
-    return render(request, 'bpmsearchapp/index.html', {'spotify_auth_url': spotify_auth_url, 'form': form})
+    return render(request, 'bpmsearchapp/index.html', {'form': form})
 
 
-# def playlist(request):
-#     return render(request, 'bpmsearchapp/song.html')
+def track(request, track):
 
 
 def created_playlist(request):
@@ -54,6 +49,8 @@ def created_playlist(request):
     }
     auth_response = requests.post(
         'https://accounts.spotify.com/api/token', data=body)
+
+    print(auth_response)
 
     user_response = requests.get('https://api.spotify.com/v1/me', headers={
         "Authorization": f"Bearer {auth_response.json()['access_token']}"})
@@ -80,6 +77,4 @@ def created_playlist(request):
                                                    },
                                                    data=songs_payload)
 
-    print(create_playlist_response)
-
-    return HttpResponse(add_items_to_playlist_response)
+    return HttpResponseRedirect('bpmsearchapp/playlist.html', {'response': add_items_to_playlist_response})

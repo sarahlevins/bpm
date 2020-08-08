@@ -33,6 +33,16 @@
     <p>Total duration is {{total_duration}}</p>
 
     <a href="{{ spotify_auth_url }}">Create Playlist in Spotify</a>
+
+    <form action="/" method="post">
+        {% csrf_token %}
+        {{ playlist_form }}
+        <input type="submit" value="Submit">
+    </form>
+
+    {% if success %}
+    <p>success</p>
+    {% endif %}
 </body>
 
 </html>
