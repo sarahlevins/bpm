@@ -1,0 +1,48 @@
+li a {
+  color: green;
+}
+
+html, body {
+  margin: 0px;
+  background: rgb(2,0,36);
+  background: linear-gradient(180deg, rgba(2,0,36,1) 0%, rgba(4,66,80,1) 72%, rgba(16,136,161,1) 100%);
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+h1,h2, h3 {
+  font-family: 'Rowdies', cursive;
+  color: #CAB3BA;
+  text-shadow: 1px 1px 7px rgba(34,65,76,0.74)
+
+}
+
+a {
+  color: #6e6064;
+}
+
+a:hover {
+  color:#CAB3BA;
+}
+
+#header, #track-detail {
+  text-align: center;
+}
+
+#search-form {
+  color: #CAB3BA;
+}
+
+#playlist {
+  background-color: #f2edee;
+  border-style: double;
+  border-color: rgba(16,136,161,1);
+}
+
+.btn-primary, .btn-primary:hover, .btn-primary:active, .btn-primary:visited {
+  background-color: #CAB3BA !important;
+  border: grey;
+  color: #000000 !important;
+}

@@ -8,6 +8,11 @@ import numpy as np
 from datetime import timedelta
 
 
+class Track():
+    def __init__(self, title):
+        self.title = title
+
+
 def get_access_token():
     CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
     CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
@@ -38,7 +43,61 @@ def pretty_time_delta(seconds):
         return '%s%ds' % (sign_string, seconds)
 
 
-class Track():
+def track_detail_query(track_title):
+    access_token = get_access_token()
+    header_list = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+    }
+    track_detail_response = requests.get(
+        f"https://api.spotify.com/v1/search?q={track_title}&type=track", headers=header_list).json()["tracks"]["items"][0]
+    audio_features_response = requests.get(
+        f"https://api.spotify.com/v1/audio-features?ids={track_detail_response['id']}", headers=header_list).json()['audio_features'][0]
+    track_details = {
+        'title': track_detail_response['name'],
+        'spotify_id': track_detail_response['id'],
+        'duration_ms': track_detail_response['duration_ms'],
+        'artist': track_detail_response['artists'][0]['name'],
+        'duration': pretty_time_delta(
+            int(track_detail_response['duration_ms']/1000)),
+        'tempo': audio_features_response['tempo']
+    }
+    return track_details
+
+
+def recommendations_query(spotify_id, tempo):
+    access_token = get_access_token()
+
+    header_list = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+    }
+    recommendations = []
+    print(
+        f"https://api.spotify.com/v1/recommendations?market=AU&limit=90&seed_tracks={spotify_id}&target_tempo={tempo}")
+    recc_response = requests.get(
+        f"https://api.spotify.com/v1/recommendations?market=AU&limit=90&seed_tracks={spotify_id}&target_tempo={tempo}", headers=header_list).json()['tracks']
+    feat_response = requests.get(
+        f"https://api.spotify.com/v1/audio-features/?ids={','.join([track['id'] for track in recc_response])}", headers=header_list).json()['audio_features']
+
+    recommendation_ids = [track['id'] for track in recc_response]
+
+    for i in enumerate(recc_response):
+        i = i[0]
+        track = Track(recc_response[i]['name'])
+        track.artist = recc_response[i]['artists'][0]['name']
+        track.duration_ms = recc_response[i]['duration_ms']
+        track.spotify_id = recc_response[i]['id']
+        track.tempo = feat_response[i]['tempo']
+        track.duration = pretty_time_delta(
+            int(recc_response[i]['duration_ms']/1000))
+        recommendations.append(track)
+    return recommendations, recommendation_ids
+
+
+class SpotifyTrack():
     def __init__(self, title):
         self.title = title
 
