@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-3 mb-5" id="playlist">
+    <div class="row pt-3">
+        <div class="col-12 col-lg-6 pt-3" id="track-detail">
+            <p>You searched for {{track.title}} by {{ track.artist }}</p>
+            <p>It's BPM is {{track.tempo}}, and it is {{ track.duration }} long.</p>
+            <p>The total duration of this playlist is {{ playlist.duration }}</p>
+        </div>
+        <div class="col-12 col-lg-6 pt-3" id="save-form">
+            <form action="/playlist/{{playlist.pk}}" method="post">
+                {% csrf_token %}
+                {% for field in form  %}
+                <div class="form-group">
+                    {{ field }}
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary btn-lg btn-block ">Save Playlist to Spotify</button>
+            </form>
+        </div>
+    </div>
+    <div class="row" style="text-align: center;">
+        <div class="col">
+            <a href="{% url 'bpm:index'%}">Go back to search</a>
+        </div>
+    </div>
+    <div class="row pt-3">
+        <div class="col-12">
+            <table class="table table-striped">
+                <tr>
+                    <th>Track Name</th>
+                    <th>Artist</th>
+                    <th>Tempo</th>
+                    <th>Duration</th>
+                </tr>
+                {%for i in playlist_tracks%}
+                <tr>
+                    <td>{{i.title}}</td>
+                    <td>{{i.artist}}</td>
+                    <td>{{i.tempo}}</td>
+                    <td>{{i.duration}}</td>
+                </tr>
+                {%endfor%}
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+{% endblock %}

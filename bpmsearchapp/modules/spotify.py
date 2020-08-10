@@ -4,7 +4,13 @@ import json
 import requests
 import datetime
 import pprint
+import numpy as np
 from datetime import timedelta
+
+
+class Track():
+    def __init__(self, title):
+        self.title = title
 
 
 def get_access_token():
@@ -37,7 +43,61 @@ def pretty_time_delta(seconds):
         return '%s%ds' % (sign_string, seconds)
 
 
-class Track():
+def track_detail_query(track_title):
+    access_token = get_access_token()
+    header_list = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+    }
+    track_detail_response = requests.get(
+        f"https://api.spotify.com/v1/search?q={track_title}&type=track", headers=header_list).json()["tracks"]["items"][0]
+    audio_features_response = requests.get(
+        f"https://api.spotify.com/v1/audio-features?ids={track_detail_response['id']}", headers=header_list).json()['audio_features'][0]
+    track_details = {
+        'title': track_detail_response['name'],
+        'spotify_id': track_detail_response['id'],
+        'duration_ms': track_detail_response['duration_ms'],
+        'artist': track_detail_response['artists'][0]['name'],
+        'duration': pretty_time_delta(
+            int(track_detail_response['duration_ms']/1000)),
+        'tempo': audio_features_response['tempo']
+    }
+    return track_details
+
+
+def recommendations_query(spotify_id, tempo):
+    access_token = get_access_token()
+
+    header_list = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+    }
+    recommendations = []
+    print(
+        f"https://api.spotify.com/v1/recommendations?market=AU&limit=90&seed_tracks={spotify_id}&target_tempo={tempo}")
+    recc_response = requests.get(
+        f"https://api.spotify.com/v1/recommendations?market=AU&limit=90&seed_tracks={spotify_id}&target_tempo={tempo}", headers=header_list).json()['tracks']
+    feat_response = requests.get(
+        f"https://api.spotify.com/v1/audio-features/?ids={','.join([track['id'] for track in recc_response])}", headers=header_list).json()['audio_features']
+
+    recommendation_ids = [track['id'] for track in recc_response]
+
+    for i in enumerate(recc_response):
+        i = i[0]
+        track = Track(recc_response[i]['name'])
+        track.artist = recc_response[i]['artists'][0]['name']
+        track.duration_ms = recc_response[i]['duration_ms']
+        track.spotify_id = recc_response[i]['id']
+        track.tempo = feat_response[i]['tempo']
+        track.duration = pretty_time_delta(
+            int(recc_response[i]['duration_ms']/1000))
+        recommendations.append(track)
+    return recommendations, recommendation_ids
+
+
+class SpotifyTrack():
     def __init__(self, title):
         self.title = title
 
@@ -73,6 +133,9 @@ class Track():
             f"https://api.spotify.com/v1/recommendations?market=AU&limit=90&seed_tracks={self.id}&target_tempo={tempo}", headers=header_list).json()['tracks']
         feat_response = requests.get(
             f"https://api.spotify.com/v1/audio-features/?ids={','.join([track['id'] for track in recc_response])}", headers=header_list).json()['audio_features']
+
+        self.recommendation_ids = [track['id'] for track in recc_response]
+
         for i in enumerate(recc_response):
             i = i[0]
             track = Track(recc_response[i]['name'])
@@ -97,4 +160,54 @@ class Track():
                     self.duration_playlist.append(self.recommendations[i[0]])
                     duration += datetime.timedelta(
                         milliseconds=self.recommendations[i[0]].duration_ms)
+        self.duration_playlist_duration = np.sum(
+            [t.duration_ms for t in self.duration_playlist])
+        return self
+
+    def spotify_playlist(self, playlist_name):
+        spotify_user_auth_url = f'https://accounts.spotify.com/authorize?client_id={os.environ.get("SPOTIFY_CLIENT_ID")}&response_type=code&redirect_uri={os.environ.get("REDIRECT_URI")}&scope=playlist-modify-private'
+
+        user_auth_response = requests.get(spotify_user_auth_url).json()
+
+        print(user_auth_response)
+
+        body = {
+            'code': user_auth_response['code'],
+            'client_id': os.environ.get('SPOTIFY_CLIENT_ID'),
+            'client_secret': os.environ.get('SPOTIFY_CLIENT_SECRET'),
+            'grant_type': 'authorization_code',
+            'redirect_uri': os.environ.get("REDIRECT_URI")
+        }
+        auth_response = requests.post(
+            'https://accounts.spotify.com/api/token', data=body)
+
+        user_response = requests.get('https://api.spotify.com/v1/me', headers={
+            "Authorization": f"Bearer {auth_response.json()['access_token']}"})
+
+        user_id = user_response.json()['id']
+        playlist_payload = '{\"name\":\"test playlist2\", \"public\":false}'
+
+        create_playlist_response = requests.post(f'https://api.spotify.com/v1/users/{user_id}/playlists',
+                                                 headers={
+                                                     "Authorization": f"Bearer {auth_response.json()['access_token']}",
+                                                     "Content-Type": "application/json"
+                                                 },
+                                                 data=playlist_payload)
+
+        playlist_id = create_playlist_response.json()['id']
+
+        songs_payload = [
+            f"spotify:track:{track}" for track in self.recommendation_ids]
+        songs_payload = json.dumps({"uris": songs_payload})
+
+        # songs_payload = json.dumps({"uris": ["spotify:track:2qxXypNXOJZ5qUFdpzJ56n",
+        #                                      "spotify:track:6QfnvcOKsdN4Q6exUWVuzn", "spotify:track:72vsd9IEBIonmvIY7TEjXK"]})
+
+        add_items_to_playlist_response = requests.post(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks',
+                                                       headers={
+                                                           "Authorization": f"Bearer {auth_response.json()['access_token']}",
+                                                           "Content-Type": "application/json"
+                                                       },
+                                                       data=songs_payload)
+
         return self

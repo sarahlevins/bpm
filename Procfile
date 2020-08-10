@@ -1,1 +1,1 @@
-Procfileweb: gunicorn BPM.wsgi --log-file -
+web: gunicorn BPM.wsgi --log-file -

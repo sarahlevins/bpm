@@ -8,6 +8,7 @@ django-environ==0.4.5
 environ==1.0
 gunicorn==20.0.4
 idna==2.10
+numpy==1.19.1
 psycopg2==2.8.5
 pycodestyle==2.6.0
 pytz==2020.1

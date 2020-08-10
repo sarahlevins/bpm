@@ -1,32 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% load static %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
+{% block content %}
 
-<body>
-    <h1>Welcome</h1>
+<div class="row justify-content-center p-3 h-100 pt-3" id="search-form-row">
+    <div class="col-10 col-lg-7 pt-3" id="search-form">
+        <form action="/" method="post">
+            {% csrf_token %}
+            {% for field in form  %}
+            <div class="form-group">
+                {{ field.label_tag }}{{field}}
+            </div>
 
-    <p>Yay!</p>
+            {% endfor %}
+            <div class="col m-0 pt-4">
+                <button type="submit" class="btn btn-primary btn-lg btn-block ">
+                    Generate Playlist
+                </button>
+            </div>
+        </form>
+    </div>
 
-    {% if user.is_authenticated %}
-    <p>Hi {{ user.username }}</p>
-    <p><a href="{% url 'logout' %}">logout</a></p>
-
-    <form action="/" method="post">
-        {% csrf_token %}
-        {{ form }}
-        <input type="submit" value="Submit">
-    </form>
-    {% else %}
-    <p>You aren't logged in</p>
-    <p><a href="{% url 'login' %}">login</a></p>
-    {% endif %}
-
-
-</body>
-
-</html>
+</div>
+</div>
+{% endblock %}
