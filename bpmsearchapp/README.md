@@ -6,3 +6,5 @@ Future features in mind:
 - Generate playlist based on desired running minutes per/km
 - Remove undesired songs from playlist and replace with other recommendations
 - User accounts to generate recommendations and list popular songs on main page
+- Error handling
+- Tests
