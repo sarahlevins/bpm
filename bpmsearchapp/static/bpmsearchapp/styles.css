@@ -41,8 +41,15 @@ a:hover {
   border-color: rgba(16,136,161,1);
 }
 
+
 .btn-primary, .btn-primary:hover, .btn-primary:active, .btn-primary:visited {
   background-color: #CAB3BA !important;
   border: grey;
   color: #000000 !important;
+}
+
+@media screen and (max-width: 600px) {
+  #playlist-table {
+    font-size: 10px;
+  }
 }
