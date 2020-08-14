@@ -8,6 +8,7 @@ import pprint
 import base64
 import json
 import os
+import datetime
 from .forms import SearchForm, PlaylistForm
 from .models import Track, Playlist
 
@@ -19,9 +20,22 @@ def index(request):
         form = SearchForm(request.POST)
         if form.is_valid():
             track = Track.create_track(form.cleaned_data.get('song_title'))
+            if form.data['target_pace']:
+                pace = form.cleaned_data.get('target_pace').split(':')
+                # 1177 is avg steps per km
+                tempo = 1000/(
+                    int(pace[0]) * 60 + int(pace[1])/60)
+            elif form.data['target_tempo']:
+                tempo = form.cleaned_data.get('target_tempo')
+            else:
+                tempo = 165
+            if form.data['duration']:
+                duration = form.cleaned_data.get('duration')
+            else:
+                duration = 60
             track.save()
             recommendations_playlist = Playlist.create_playlist(
-                track, form.cleaned_data.get('target_tempo'), form.cleaned_data.get('duration'))
+                track, tempo, duration)
             return redirect('bpm:playlist', pk=recommendations_playlist.pk)
     else:
         form = SearchForm()
@@ -40,9 +54,15 @@ def playlist(request, pk):
         form = PlaylistForm()
         request.session['playlist_pk'] = pk
         playlist = Playlist.objects.get(pk=pk)
+        total_seconds = playlist.duration.total_seconds()
+        hours, remainder = divmod(total_seconds, 60*60)
+        minutes, seconds = divmod(remainder, 60)
+        duration = str(int(hours))+':'+str(int(minutes))+':'+str(int(seconds))
+
     return render(request, 'bpmsearchapp/playlist.html', {
         'form': form,
         'playlist': playlist,
+        'duration': duration,
         'playlist_tracks': playlist.tracks.all(),
         'track': playlist.based_on})
 

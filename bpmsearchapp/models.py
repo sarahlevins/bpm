@@ -30,7 +30,7 @@ class Track(models.Model):
             artist=track['artist'],
             duration=track['duration'],
             duration_ms=track['duration_ms'],
-            tempo=track['tempo']
+            tempo=int(track['tempo'])
         )
 
 
@@ -60,7 +60,7 @@ class Playlist(models.Model):
                     artist=i[1].artist,
                     duration=i[1].duration,
                     duration_ms=i[1].duration_ms,
-                    tempo=i[1].tempo
+                    tempo=int(i[1].tempo)
                 )
                 recommended_track.save()
                 duration_playlist.append(recommended_track)

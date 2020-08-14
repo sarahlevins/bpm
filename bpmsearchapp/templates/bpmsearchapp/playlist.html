@@ -7,7 +7,7 @@
         <div class="col-12 col-lg-6 pt-3" id="track-detail">
             <p>You searched for {{track.title}} by {{ track.artist }}</p>
             <p>It's BPM is {{track.tempo}}, and it is {{ track.duration }} long.</p>
-            <p>The total duration of this playlist is {{ playlist.duration }}</p>
+            <p>The total duration of this playlist is {{ duration }}</p>
         </div>
         <div class="col-12 col-lg-6 pt-3" id="save-form">
             <form action="/playlist/{{playlist.pk}}" method="post">
